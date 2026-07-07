@@ -1,0 +1,40 @@
+name: Publicar no Composer
+
+on:
+  repository_dispatch:
+    types: [tag-created]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag existente que sera publicada
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish-release:
+    name: Publicar elavora/api-queue-worker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.client_payload.tag || inputs.tag }}
+
+      - name: Validar configuracao
+        run: |
+          test -f "composer.json" || {
+            echo "::error::composer.json ausente"
+            exit 1
+          }
+
+      - name: Notificar Packagist
+        if: vars.PACKAGIST_WEBHOOK_URL != ''
+        run: |
+          curl -X POST "${{ vars.PACKAGIST_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{"repository":{"url":"https://github.com/Elavora/api-queue-worker"}}'
+        continue-on-error: true
