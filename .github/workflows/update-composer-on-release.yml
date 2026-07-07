@@ -1,0 +1,50 @@
+name: Atualizar Composer na Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  update-composer:
+    name: Atualizar composer.json com versão da release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Extrair versão da release
+        id: version
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Atualizar composer.json
+        run: |
+          python3 << 'EOF'
+          import json
+          with open('composer.json', 'r', encoding='utf-8') as f:
+              data = json.load(f)
+          data['version'] = '${{ steps.version.outputs.version }}'
+          with open('composer.json', 'w', encoding='utf-8', newline='\n') as f:
+              json.dump(data, f, ensure_ascii=False, indent=2)
+              f.write('\n')
+          EOF
+
+      - name: Validar JSON
+        run: python3 -m json.tool composer.json > /dev/null
+
+      - name: Commit e push alterações
+        run: |
+          git config user.name "ScriptPlayerAgent"
+          git config user.email "scriptPlayerAgent@felipecavalca.dev"
+          git add composer.json
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Chore: Atualizar composer.json para versão ${{ steps.version.outputs.version }}"
+            git push origin main
+          )
