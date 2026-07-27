@@ -16,4 +16,4 @@ permissions:
 jobs:
   codeql:
     name: CodeQL
-    uses: Elavora/.github/.github/workflows/codeql.yml@3b7dadedc2f7559cd3ce307904175412b1b2d595
+    uses: Elavora/.github/.github/workflows/codeql.yml@5715f070384cdc70885f1a77670e54fefcfb255d
