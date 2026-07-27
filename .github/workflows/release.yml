@@ -11,8 +11,8 @@ permissions:
 jobs:
   release:
     if: github.event.pull_request.merged == true
-    uses: Elavora/.github/.github/workflows/release.yml@5715f070384cdc70885f1a77670e54fefcfb255d
+    uses: Elavora/.github/.github/workflows/release.yml@1e0f42a92a4aafc35522709c30bc4e83acab82f1
     with:
       package_name: elavora/api-queue-worker
-      automation_ref: 5715f070384cdc70885f1a77670e54fefcfb255d
+      automation_ref: 1e0f42a92a4aafc35522709c30bc4e83acab82f1
     secrets: inherit

@@ -17,7 +17,7 @@ concurrency:
 jobs:
   quality:
     name: Quality
-    uses: Elavora/.github/.github/workflows/quality.yml@5715f070384cdc70885f1a77670e54fefcfb255d
+    uses: Elavora/.github/.github/workflows/quality.yml@1e0f42a92a4aafc35522709c30bc4e83acab82f1
     with:
       coverage_min: 80
       development_branch: fix/estabiliza-pacote
