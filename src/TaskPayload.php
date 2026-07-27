@@ -148,6 +148,9 @@ final class TaskPayload implements JsonSerializable
         return $value;
     }
 
+    /**
+     * @param array<mixed, mixed> $value
+     */
     private static function assertSerializableArray(array $value): void
     {
         foreach ($value as $item) {

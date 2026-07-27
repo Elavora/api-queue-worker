@@ -1,0 +1,19 @@
+name: CodeQL
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  merge_group:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  codeql:
+    name: CodeQL
+    uses: Elavora/.github/.github/workflows/codeql.yml@1e0f42a92a4aafc35522709c30bc4e83acab82f1
