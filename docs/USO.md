@@ -1,52 +1,161 @@
 # Guia de uso
 
-Worker opcional para consumir tarefas publicadas em qualquer implementacao do
-
 ## Instalacao
 
 ```bash
-composer require elavora/api-queue-worker
+composer require elavora/api-queue-worker:^1.0
 ```
 
-## Quando usar
+Requisitos: PHP `>=8.3` e `elavora/api-framework` `^1.0`.
 
-- Publicar ou consumir tarefas assincronas.
-- Esconder detalhes do backend de fila atras dos contratos do framework.
-- Reutilizar workers e handlers em ambientes diferentes.
+## Fluxo executavel
 
-## Exemplo rapido
+`QueueWorker` e um servico, nao uma extensao. Ele recebe uma implementacao de
+`Queue` e um `TaskRegistry`.
 
 ```php
 use Elavora\Api\Extension\QueueWorker\QueueWorker;
+use Elavora\Api\Extension\QueueWorker\TaskPayload;
+use Elavora\Api\Extension\QueueWorker\TaskRegistry;
+use Elavora\Api\Framework\Contracts\Queue;
 
-$application->extend(new QueueWorker([
-    'prefix' => 'app:queue:',
-]));
+final class InMemoryQueue implements Queue
+{
+    /** @var array<string, list<array<string, mixed>>> */
+    private array $items = [];
+
+    public function push(string $queue, array $payload): void
+    {
+        $this->items[$queue][] = $payload;
+    }
+
+    public function pop(string $queue): ?array
+    {
+        if (($this->items[$queue] ?? []) === []) {
+            return null;
+        }
+
+        return array_shift($this->items[$queue]);
+    }
+}
+
+$queue = new InMemoryQueue();
+$runs = 0;
+$tasks = (new TaskRegistry())->add(
+    'reports.generate',
+    static function (TaskPayload $payload) use (&$runs): void {
+        $runs++;
+        if ($runs === 1) {
+            throw new RuntimeException('Servico temporariamente indisponivel.');
+        }
+    }
+);
+$worker = new QueueWorker($queue, $tasks);
+
+$queue->push(
+    'reports',
+    (new TaskPayload('reports.generate', ['report_id' => 42], maxAttempts: 3))->toArray()
+);
+
+$retry = $worker->workOnce('reports');
+assert($retry->isRetried());
+assert($retry->payload()?->attempts() === 1);
+
+$success = $worker->workOnce('reports');
+assert($success->isProcessed());
+
+$idle = $worker->workOnce('reports');
+assert($idle->isIdle());
 ```
 
-## Principais pontos de entrada
+Cada falha de execucao gera uma nova `TaskPayload` com `attempts + 1`. A tarefa
+e reenfileirada enquanto `attempts < maxAttempts`. O TTL ou a conexao da fila,
+quando existirem, pertencem ao adapter de `Queue`, nao ao worker.
 
-- `Elavora\Api\Extension\QueueWorker\QueueWorker`
-- `Elavora\Api\Extension\QueueWorker\QueueWorkerCommand`
-- `Elavora\Api\Extension\QueueWorker\TaskHandler`
-- `Elavora\Api\Extension\QueueWorker\TaskPayload`
-- `Elavora\Api\Extension\QueueWorker\TaskRegistry`
+## Resultados terminais
 
-## Dependencias de runtime
+`workOnce()` sempre retorna um `WorkerResult`:
 
-- `elavora/api-framework` `^0.3.1`
+| Estado | Significado |
+| --- | --- |
+| `idle` | A fila estava vazia e nada foi removido |
+| `processed` | O handler terminou com sucesso |
+| `retried` | O handler falhou e a tarefa foi reenfileirada |
+| `invalid` | O payload removido nao pode virar `TaskPayload` |
+| `failed` | A tarefa atingiu `maxAttempts` |
 
-## Validacao no projeto consumidor
+Resultados `invalid` preservam a fila, a causa e o payload bruto para tratamento
+explicito. Resultados `failed` preservam a tarefa, a ultima causa e a contagem
+final em `payload()->attempts()`. O pacote nao registra automaticamente o
+payload nem a excecao.
 
-Depois de instalar o pacote, rode os testes da aplicacao consumidora. Para uma verificacao isolada do pacote, use container:
+Use um handler terminal para persistir em dead-letter storage sem acoplar o
+worker a Redis:
+
+```php
+use Elavora\Api\Extension\QueueWorker\TerminalFailureHandler;
+use Elavora\Api\Extension\QueueWorker\WorkerResult;
+
+final class ApplicationDeadLetterHandler implements TerminalFailureHandler
+{
+    public function handle(WorkerResult $result): void
+    {
+        // Persista apenas os campos permitidos pela politica da aplicacao.
+    }
+}
+
+$worker = new QueueWorker($queue, $tasks, new ApplicationDeadLetterHandler());
+```
+
+O handler e chamado uma vez quando o worker produz `invalid` ou `failed`.
+Excecoes lancadas pelo proprio handler terminal sao propagadas ao chamador.
+
+## Comando
+
+Um entrypoint `worker.php` pode terminar com:
+
+```php
+use Elavora\Api\Extension\QueueWorker\QueueWorkerCommand;
+
+exit((new QueueWorkerCommand($worker))->run($argv));
+```
+
+Opcoes:
+
+- `--queue=reports`: fila; o padrao vem de `QUEUE_NAME` ou `default`.
+- `--sleep=1`: pausa entre consultas vazias.
+- `--max-jobs=100`: encerra apos processar ou reenfileirar 100 tarefas.
+- `--once`: executa uma unica consulta, inclusive quando a fila estiver vazia.
+
+Exemplo:
 
 ```bash
-docker run --rm -v "${PWD}:/workspace" -w "/workspace/api-queue-worker" composer:2 composer validate --strict --no-check-publish
-docker run --rm -v "${PWD}:/workspace" -w "/workspace/api-queue-worker" composer:2 sh -lc "find . \\( -path ./.git -o -path ./vendor \\) -prune -o -name '*.php' -print0 | xargs -0 -r -n1 php -l"
+php worker.php --queue=reports --sleep=1 --max-jobs=100
+php worker.php --queue=reports --once
 ```
 
-## Observacoes
+Os codigos sao `0` para fila vazia, sucesso ou retry, `1` para falha definitiva
+e `2` para payload invalido. A saida identifica estado e fila, sem imprimir o
+payload.
 
-- Mantenha regras de produto fora deste pacote.
-- Prefira configurar extensoes no bootstrap da aplicacao.
-- Instale apenas os modulos que a aplicacao realmente usa.
+## Garantia de entrega
+
+O contrato atual usa `pop()`: a mensagem e removida antes da validacao e da
+execucao. Retry e falhas terminais ficam trataveis durante o processo, mas uma
+queda entre `pop()` e o reenvio/persistencia ainda pode perder a mensagem. Uma
+garantia mais forte exige um adapter com reserva e confirmacao ou outra
+infraestrutura de fila; ela nao pode ser implementada somente pelo worker.
+
+Conexoes e credenciais devem vir da configuracao externa do adapter de `Queue`.
+
+## Qualidade
+
+```bash
+composer validate --strict --no-check-publish
+composer lint
+composer analyse
+composer test
+composer check
+```
+
+`composer check` executa lint portatil, PHPStan nivel 8 e PHPUnit.
