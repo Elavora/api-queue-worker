@@ -18,12 +18,12 @@
     },
     "scripts": {
         "lint": "@php tools/lint.php",
-        "analyse": "@php vendor/bin/phpstan analyse --configuration=phpstan.neon --no-progress",
         "test": "@php vendor/bin/phpunit -c phpunit.xml",
+        "analyse": "@php vendor/bin/phpstan analyse --no-progress --memory-limit=1G",
         "check": [
             "@lint",
-            "@analyse",
-            "@test"
+            "@test",
+            "@analyse"
         ]
     },
     "extra": {

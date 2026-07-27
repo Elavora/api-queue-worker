@@ -1,0 +1,24 @@
+name: Quality
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality
+    uses: Elavora/.github/.github/workflows/quality.yml@3b7dadedc2f7559cd3ce307904175412b1b2d595
+    with:
+      coverage_min: 80
+      development_branch: fix/estabiliza-pacote
+      development_dependencies: '{"elavora/api-framework":"fix/estabiliza-framework"}'

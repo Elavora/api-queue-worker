@@ -1,0 +1,5 @@
+.phpstan.cache/
+.phpunit.cache/
+composer.lock
+coverage/
+vendor/
