@@ -1,0 +1,26 @@
+name: Atualizar Packagist
+
+on:
+  workflow_run:
+    workflows: [Release, Tag on merge]
+    types: [completed]
+  release:
+    types: [published]
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    uses: Elavora/.github/.github/workflows/sync-packagist.yml@0d1db703cdba17a10ddb4a5c36ba174ee2d3d1e3
+    with:
+      automation_ref: 0d1db703cdba17a10ddb4a5c36ba174ee2d3d1e3
+    secrets:
+      PACKAGIST_WEBHOOK_URL: ${{ secrets.PACKAGIST_WEBHOOK_URL }}
