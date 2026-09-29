@@ -4,6 +4,8 @@ on:
   workflow_run:
     workflows: [Release, Tag on merge]
     types: [completed]
+  repository_dispatch:
+    types: [tag-created]
   release:
     types: [published]
   push:
@@ -12,15 +14,12 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   sync:
-    if: >-
-      github.event_name != 'workflow_run' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_repository.full_name == github.repository)
-    uses: Elavora/.github/.github/workflows/sync-packagist.yml@0d1db703cdba17a10ddb4a5c36ba174ee2d3d1e3
+    uses: Elavora/.github/.github/workflows/sync-packagist.yml@a9c487de6c547dadb1e2785607eea4ae83541d70
     with:
-      automation_ref: 0d1db703cdba17a10ddb4a5c36ba174ee2d3d1e3
+      automation_ref: a9c487de6c547dadb1e2785607eea4ae83541d70
     secrets:
       PACKAGIST_WEBHOOK_URL: ${{ secrets.PACKAGIST_WEBHOOK_URL }}
