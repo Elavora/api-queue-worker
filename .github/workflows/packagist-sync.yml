@@ -4,8 +4,6 @@ on:
   workflow_run:
     workflows: [Release, Tag on merge]
     types: [completed]
-  repository_dispatch:
-    types: [tag-created]
   release:
     types: [published]
   push:
@@ -18,8 +16,8 @@ permissions:
 
 jobs:
   sync:
-    uses: Elavora/.github/.github/workflows/sync-packagist.yml@a9c487de6c547dadb1e2785607eea4ae83541d70
+    uses: Elavora/.github/.github/workflows/sync-packagist.yml@b56db49fb0baebd450211fe47675f1c88143037b
     with:
-      automation_ref: a9c487de6c547dadb1e2785607eea4ae83541d70
+      automation_ref: b56db49fb0baebd450211fe47675f1c88143037b
     secrets:
       PACKAGIST_WEBHOOK_URL: ${{ secrets.PACKAGIST_WEBHOOK_URL }}
