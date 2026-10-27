@@ -3,14 +3,18 @@
 declare(strict_types=1);
 
 use Elavora\Api\Extension\QueueWorker\QueueWorker;
-use Elavora\Api\Extension\QueueWorker\TaskHandler;
 use Elavora\Api\Extension\QueueWorker\TaskPayload;
 use Elavora\Api\Extension\QueueWorker\TaskRegistry;
-use Elavora\Api\Framework\Contracts\Queue;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Processamento de uma mensagem por chamada.
+ *
+ * @see docs/USO.md#queueworker
+ */
 final class QueueWorkerTest extends TestCase
 {
+    /** @see docs/USO.md#workonce */
     public function testProcessesSerializedTaskPayload(): void
     {
         $queue = new FakeQueue();
@@ -24,14 +28,18 @@ final class QueueWorkerTest extends TestCase
         $result = $worker->workOnce('default');
 
         self::assertTrue($result->isProcessed());
+        self::assertSame(['email' => 'user@example.com'], $result->payload()?->data());
+        self::assertNull($result->error());
         self::assertSame([['email' => 'user@example.com']], $handledPayloads);
         self::assertNull($queue->pop('default'));
     }
 
+    /** @see docs/USO.md#workonce */
     public function testRetriesFailedTaskUntilMaxAttempts(): void
     {
         $queue = new FakeQueue();
-        $registry = (new TaskRegistry())->add('always.fail', new FailingTaskHandler());
+        $handler = new FailingTaskHandler();
+        $registry = (new TaskRegistry())->add('always.fail', $handler);
         $worker = new QueueWorker($queue, $registry);
 
         $queue->push('default', (new TaskPayload('always.fail', maxAttempts: 2))->toArray());
@@ -39,45 +47,112 @@ final class QueueWorkerTest extends TestCase
         $firstResult = $worker->workOnce('default');
         self::assertTrue($firstResult->isRetried());
         self::assertSame(1, $firstResult->payload()?->attempts());
+        self::assertSame($handler->lastError, $firstResult->error());
+        $messages = $queue->messages('default');
+        self::assertCount(1, $messages);
+        self::assertSame(1, $messages[0]['attempts']);
 
         $secondResult = $worker->workOnce('default');
         self::assertTrue($secondResult->isFailed());
         self::assertSame(2, $secondResult->payload()?->attempts());
+        self::assertSame($handler->lastError, $secondResult->error());
         self::assertNull($queue->pop('default'));
     }
 
-    public function testReturnsIdleWhenQueueIsEmpty(): void
+    /** @see docs/USO.md#workonce */
+    public function testHandlerRunsAtMostMaxAttemptsTimes(): void
     {
-        $worker = new QueueWorker(new FakeQueue(), new TaskRegistry());
+        $queue = new FakeQueue();
+        $handler = new FailingTaskHandler();
+        $worker = new QueueWorker($queue, (new TaskRegistry())->add('always.fail', $handler));
+        $queue->push('default', (new TaskPayload('always.fail'))->toArray());
 
+        $first = $worker->workOnce('default');
+        $second = $worker->workOnce('default');
+        $third = $worker->workOnce('default');
+
+        self::assertTrue($first->isRetried());
+        self::assertSame(1, $first->payload()?->attempts());
+        self::assertTrue($second->isRetried());
+        self::assertSame(2, $second->payload()?->attempts());
+        self::assertTrue($third->isFailed());
+        self::assertSame(3, $third->payload()?->attempts());
+        self::assertSame(3, $handler->calls);
         self::assertTrue($worker->workOnce('default')->isIdle());
     }
-}
 
-final class FakeQueue implements Queue
-{
-    /** @var array<string, list<array>> */
-    private array $items = [];
-
-    public function push(string $queue, array $payload): void
+    /** @see docs/USO.md#workonce */
+    public function testRetriedMessageGoesToEndOfSameQueue(): void
     {
-        $this->items[$queue][] = $payload;
+        $queue = new FakeQueue();
+        $registry = (new TaskRegistry())
+            ->add('always.fail', new FailingTaskHandler())
+            ->add('ok', static function (TaskPayload $payload): void {
+            });
+        $worker = new QueueWorker($queue, $registry);
+        $queue->push('emails', (new TaskPayload('always.fail'))->toArray());
+        $queue->push('emails', (new TaskPayload('ok'))->toArray());
+
+        $worker->workOnce('emails');
+
+        $messages = $queue->messages('emails');
+        self::assertSame(['ok', 'always.fail'], array_column($messages, 'task'));
+        self::assertSame([], $queue->messages('default'));
     }
 
-    public function pop(string $queue): ?array
+    /** @see docs/USO.md#workonce */
+    public function testReturnsIdleWhenQueueIsEmpty(): void
     {
-        if (($this->items[$queue] ?? []) === []) {
-            return null;
+        $queue = new FakeQueue();
+        $worker = new QueueWorker($queue, new TaskRegistry());
+
+        $result = $worker->workOnce('default');
+
+        self::assertTrue($result->isIdle());
+        self::assertNull($result->payload());
+        self::assertNull($result->error());
+        self::assertSame([], $queue->pushes);
+        self::assertSame(['default'], $queue->pops);
+    }
+
+    /** @see docs/USO.md#workonce */
+    public function testMissingHandlerFailsDefinitivelyWithMaxAttemptsOne(): void
+    {
+        $queue = new FakeQueue();
+        $worker = new QueueWorker($queue, new TaskRegistry());
+        $queue->push('default', (new TaskPayload('emails.send', maxAttempts: 1))->toArray());
+
+        $result = $worker->workOnce('default');
+
+        self::assertTrue($result->isFailed());
+        self::assertInstanceOf(RuntimeException::class, $result->error());
+        self::assertSame('Nenhum handler registrado para a tarefa emails.send.', $result->error()->getMessage());
+        self::assertSame([], $queue->messages('default'));
+    }
+
+    /** @see docs/USO.md#workonce */
+    public function testInvalidPayloadPropagatesAndIsRemovedFromQueue(): void
+    {
+        $queue = new FakeQueue();
+        $queue->seed('default', ['task' => 10]);
+        $worker = new QueueWorker($queue, new TaskRegistry());
+
+        try {
+            $worker->workOnce('default');
+            self::fail('Esperava InvalidArgumentException.');
+        } catch (InvalidArgumentException $exception) {
+            self::assertSame('Payload de tarefa deve conter task como string.', $exception->getMessage());
         }
 
-        return array_shift($this->items[$queue]);
+        self::assertSame([], $queue->messages('default'));
+        self::assertSame([], $queue->pushes);
     }
-}
 
-final class FailingTaskHandler implements TaskHandler
-{
-    public function handle(TaskPayload $payload): void
+    /** @see docs/USO.md#queueworker */
+    public function testAcceptsNamedArguments(): void
     {
-        throw new RuntimeException('Falha intencional para teste.');
+        $worker = new QueueWorker(queue: new FakeQueue(), tasks: new TaskRegistry());
+
+        self::assertTrue($worker->workOnce('default')->isIdle());
     }
 }
