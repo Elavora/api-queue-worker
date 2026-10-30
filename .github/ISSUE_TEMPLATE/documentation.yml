@@ -1,0 +1,18 @@
+name: Documentation
+description: Sugira ajuste na documentacao
+title: "docs: "
+labels: ["documentation"]
+body:
+  - type: textarea
+    id: location
+    attributes:
+      label: Onde esta o problema
+      description: Informe arquivo, secao ou link.
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: Mudanca sugerida
+    validations:
+      required: true

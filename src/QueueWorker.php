@@ -15,9 +15,8 @@ final class QueueWorker
      */
     public function __construct(
         private readonly Queue $queue,
-        private readonly TaskRegistry $tasks
-    ) {
-    }
+        private readonly TaskRegistry $tasks,
+    ) {}
 
     /**
      * Processa uma unica mensagem da fila.

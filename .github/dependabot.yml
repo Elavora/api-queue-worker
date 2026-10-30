@@ -8,6 +8,11 @@ updates:
       time: "09:00"
       timezone: "America/Sao_Paulo"
     open-pull-requests-limit: 5
+    labels: ["dependencies"]
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -17,3 +22,11 @@ updates:
       time: "09:00"
       timezone: "America/Sao_Paulo"
     open-pull-requests-limit: 5
+    labels: ["dependencies"]
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"

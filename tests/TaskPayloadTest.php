@@ -83,16 +83,16 @@ final class TaskPayloadTest extends TestCase
      */
     public static function invalidConstructorProvider(): iterable
     {
-        yield 'task vazio' => [static fn (): TaskPayload => new TaskPayload(''), 'O nome da tarefa nao pode ser vazio.'];
-        yield 'attempts negativo' => [static fn (): TaskPayload => new TaskPayload('a', attempts: -1), 'A quantidade de tentativas nao pode ser negativa.'];
-        yield 'maxAttempts zero' => [static fn (): TaskPayload => new TaskPayload('a', maxAttempts: 0), 'A quantidade maxima de tentativas deve ser maior que zero.'];
-        yield 'maxAttempts negativo' => [static fn (): TaskPayload => new TaskPayload('a', maxAttempts: -2), 'A quantidade maxima de tentativas deve ser maior que zero.'];
-        yield 'objeto em data' => [static fn (): TaskPayload => new TaskPayload('a', ['obj' => new stdClass()]), 'Payload de tarefa aceita apenas valores escalares, nulos e arrays.'];
-        yield 'recurso aninhado' => [static fn (): TaskPayload => new TaskPayload('a', ['lista' => [fopen('php://memory', 'r')]]), 'Payload de tarefa aceita apenas valores escalares, nulos e arrays.'];
-        yield 'closure profunda' => [static fn (): TaskPayload => new TaskPayload('a', ['x' => ['y' => ['z' => static fn () => null]]]), 'Payload de tarefa aceita apenas valores escalares, nulos e arrays.'];
-        yield 'ordem: task antes de attempts' => [static fn (): TaskPayload => new TaskPayload('', attempts: -1, maxAttempts: 0), 'O nome da tarefa nao pode ser vazio.'];
-        yield 'ordem: attempts antes de maxAttempts' => [static fn (): TaskPayload => new TaskPayload('a', attempts: -1, maxAttempts: 0), 'A quantidade de tentativas nao pode ser negativa.'];
-        yield 'ordem: maxAttempts antes de data' => [static fn (): TaskPayload => new TaskPayload('a', ['obj' => new stdClass()], maxAttempts: 0), 'A quantidade maxima de tentativas deve ser maior que zero.'];
+        yield 'task vazio' => [static fn(): TaskPayload => new TaskPayload(''), 'O nome da tarefa nao pode ser vazio.'];
+        yield 'attempts negativo' => [static fn(): TaskPayload => new TaskPayload('a', attempts: -1), 'A quantidade de tentativas nao pode ser negativa.'];
+        yield 'maxAttempts zero' => [static fn(): TaskPayload => new TaskPayload('a', maxAttempts: 0), 'A quantidade maxima de tentativas deve ser maior que zero.'];
+        yield 'maxAttempts negativo' => [static fn(): TaskPayload => new TaskPayload('a', maxAttempts: -2), 'A quantidade maxima de tentativas deve ser maior que zero.'];
+        yield 'objeto em data' => [static fn(): TaskPayload => new TaskPayload('a', ['obj' => new stdClass()]), 'Payload de tarefa aceita apenas valores escalares, nulos e arrays.'];
+        yield 'recurso aninhado' => [static fn(): TaskPayload => new TaskPayload('a', ['lista' => [fopen('php://memory', 'r')]]), 'Payload de tarefa aceita apenas valores escalares, nulos e arrays.'];
+        yield 'closure profunda' => [static fn(): TaskPayload => new TaskPayload('a', ['x' => ['y' => ['z' => static fn() => null]]]), 'Payload de tarefa aceita apenas valores escalares, nulos e arrays.'];
+        yield 'ordem: task antes de attempts' => [static fn(): TaskPayload => new TaskPayload('', attempts: -1, maxAttempts: 0), 'O nome da tarefa nao pode ser vazio.'];
+        yield 'ordem: attempts antes de maxAttempts' => [static fn(): TaskPayload => new TaskPayload('a', attempts: -1, maxAttempts: 0), 'A quantidade de tentativas nao pode ser negativa.'];
+        yield 'ordem: maxAttempts antes de data' => [static fn(): TaskPayload => new TaskPayload('a', ['obj' => new stdClass()], maxAttempts: 0), 'A quantidade maxima de tentativas deve ser maior que zero.'];
     }
 
     /**
