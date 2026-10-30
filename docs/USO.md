@@ -13,8 +13,8 @@ Este guia é a especificação do pacote. Tudo o que um teste precisa saber est�
 | `elavora/api-framework` | `^2.0` |
 | PHP | `>=8.3` |
 
-A `1.0.0` sai pelo PR com label `upgrade`. O workflow `tag_on_merge` sobe o major da última tag
-(`v0.2.0`) e cria `v1.0.0`. Sem a label `release`, a release do GitHub sai marcada como prerelease.
+A `1.0.0` já foi publicada (tag legada `v1.0.0`, marcada como pré-release no GitHub). As versões
+seguintes saem do fluxo central de release: veja [Versões e release](AUTOMACAO.md#versões-e-release).
 
 Não existe compatibilidade com o framework `0.x` nem `1.x`.
 
@@ -33,6 +33,8 @@ O `composer.json` do pacote deve ter:
 - `autoload.psr-4` = `"Elavora\\Api\\Extension\\QueueWorker\\": "src/"` (sem mudança)
 - `require-dev.phpunit/phpunit` = `"^10.5 || ^11.0 || ^12.0"` (sem mudança)
 - `scripts.test` = `"phpunit -c phpunit.xml"` (sem mudança)
+- `require-dev`, `scripts` e `config` de qualidade (`elavora/code-standards`, PHPStan, `lint`, `analyse`, `check`):
+  veja [`composer.json` em Automação](AUTOMACAO.md#composerjson)
 - nenhum `repositories` (nem `path`, nem `vcs`)
 - `composer validate --strict --no-check-publish` sem erros.
 
@@ -362,24 +364,9 @@ ele continua dormindo e tentando de novo. Nos testes, publique tarefas suficient
 
 ## Validação local
 
-Os testes rodam no container `ghcr.io/elavora/php-dev:8.3-latest`, que já tem PHP 8.3 e Composer.
-Monte o repo em `/origem`, só para leitura. Não use `/src`.
-
-O comando faz `git clone` do repo para dentro do container. Assim `vendor/` e `composer.lock`
-não são criados na pasta do Windows, e nada precisa ser apagado depois. O clone pega só o que
-está **commitado**: commite antes de validar.
-
-No PowerShell, na pasta do repo:
-
-```powershell
-docker run --rm -v "${PWD}:/origem:ro" ghcr.io/elavora/php-dev:8.3-latest sh -lc 'git config --global --add safe.directory "*" && git clone -q /origem /tmp/pacote && cd /tmp/pacote && composer validate --strict --no-check-publish && composer update --no-interaction && composer test'
-```
-
-O framework `2.0.0` já está no Packagist, então não é preciso repositório `path`.
-
-Enquanto o `composer.json` commitado pedir `elavora/api-framework` `^0.3.1`, o Composer instala o
-framework `0.3.x`, e os testes falham porque `Elavora\Api\Framework\Contracts\Queue` não existe nele.
-Isso some quando o `composer.json` seguir a seção "`composer.json`" acima.
+Como rodar os testes, o lint e o PHPStan, e como reproduzir o CI, está em
+[Desenvolvimento e testes](DESENVOLVIMENTO.md). Não é preciso repositório `path`: o framework `2.0` já está no
+Packagist.
 
 ## Observações
 
