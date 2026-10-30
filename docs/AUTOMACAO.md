@@ -838,8 +838,9 @@ As regras completas estão no `Elavora/.github`: [versionamento](https://github.
 - Só o último PR de uma série de mudanças leva `release`.
 
 **Neste repositório:** a última tag é a legada `v1.0.0`, que conta como a estável `1.0.0`. O PR de adoção do pipeline
-não leva `release` nem label de versão, então o merge gera `1.0.1-beta.1`. O `release.yml` novo roda no merge desse
-mesmo PR, e o `tag_on_merge.yml` antigo já não existe nele, então sai uma release só.
+é o último PR da série e leva as labels `refactor` e `release`, então o merge gera a estável `1.0.1`. O
+`release.yml` novo roda no merge desse mesmo PR, e o `tag_on_merge.yml` antigo já não existe nele, então sai uma
+release só.
 
 O Packagist é avisado pelo `release.yml` a cada release, com o secret `PACKAGIST_WEBHOOK_URL`. O pacote só fica
 disponível na versão nova depois dessa notificação.
