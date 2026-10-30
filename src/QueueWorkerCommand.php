@@ -53,6 +53,8 @@ final class QueueWorkerCommand
     }
 
     /**
+     * @param array<int, string> $argv
+     *
      * @return array{queue: string, sleep: int, max_jobs: int}
      */
     private function options(array $argv): array
