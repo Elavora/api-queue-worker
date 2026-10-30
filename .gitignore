@@ -1,0 +1,7 @@
+.phpstan.cache/
+.phpunit.cache/
+composer.lock
+coverage/
+vendor/
+/.elavora/
+/.php-cs-fixer.php

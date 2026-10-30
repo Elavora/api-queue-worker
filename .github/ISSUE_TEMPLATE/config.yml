@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Vulnerabilidade de seguranca
+    url: https://github.com/Elavora/api-queue-worker/security/policy
+    about: Reporte vulnerabilidades conforme a politica de seguranca do repositorio.
