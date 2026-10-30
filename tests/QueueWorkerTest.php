@@ -87,8 +87,7 @@ final class QueueWorkerTest extends TestCase
         $queue = new FakeQueue();
         $registry = (new TaskRegistry())
             ->add('always.fail', new FailingTaskHandler())
-            ->add('ok', static function (TaskPayload $payload): void {
-            });
+            ->add('ok', static function (TaskPayload $payload): void {});
         $worker = new QueueWorker($queue, $registry);
         $queue->push('emails', (new TaskPayload('always.fail'))->toArray());
         $queue->push('emails', (new TaskPayload('ok'))->toArray());

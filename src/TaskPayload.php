@@ -19,7 +19,7 @@ final class TaskPayload implements JsonSerializable
         private readonly string $task,
         private readonly array $data = [],
         private readonly int $attempts = 0,
-        private readonly int $maxAttempts = 3
+        private readonly int $maxAttempts = 3,
     ) {
         if ($this->task === '') {
             throw new InvalidArgumentException('O nome da tarefa nao pode ser vazio.');
@@ -57,7 +57,7 @@ final class TaskPayload implements JsonSerializable
             task: $task,
             data: $data,
             attempts: self::integerValue($payload['attempts'] ?? 0, 'attempts'),
-            maxAttempts: self::integerValue($payload['max_attempts'] ?? 3, 'max_attempts')
+            maxAttempts: self::integerValue($payload['max_attempts'] ?? 3, 'max_attempts'),
         );
     }
 
@@ -104,7 +104,7 @@ final class TaskPayload implements JsonSerializable
             task: $this->task,
             data: $this->data,
             attempts: $this->attempts + 1,
-            maxAttempts: $this->maxAttempts
+            maxAttempts: $this->maxAttempts,
         );
     }
 

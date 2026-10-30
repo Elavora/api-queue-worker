@@ -23,16 +23,14 @@ final class TaskRegistryTest extends TestCase
     {
         $registry = new TaskRegistry();
 
-        self::assertSame($registry, $registry->add('a', static function (TaskPayload $payload): void {
-        }));
+        self::assertSame($registry, $registry->add('a', static function (TaskPayload $payload): void {}));
     }
 
     /** @see docs/USO.md#add */
     public function testAddRejectsEmptyTaskWithRuntimeException(): void
     {
         try {
-            (new TaskRegistry())->add('', static function (TaskPayload $payload): void {
-            });
+            (new TaskRegistry())->add('', static function (TaskPayload $payload): void {});
             self::fail('Esperava RuntimeException.');
         } catch (RuntimeException $exception) {
             self::assertNotInstanceOf(InvalidArgumentException::class, $exception);
@@ -83,8 +81,7 @@ final class TaskRegistryTest extends TestCase
     /** @see docs/USO.md#handle */
     public function testHandleLookupIsCaseSensitive(): void
     {
-        $registry = (new TaskRegistry())->add('emails.send', static function (TaskPayload $payload): void {
-        });
+        $registry = (new TaskRegistry())->add('emails.send', static function (TaskPayload $payload): void {});
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Nenhum handler registrado para a tarefa Emails.Send.');

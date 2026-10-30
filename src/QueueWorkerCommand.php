@@ -12,9 +12,8 @@ final class QueueWorkerCommand
      */
     public function __construct(
         private readonly QueueWorker $worker,
-        private readonly int $defaultSleepSeconds = 1
-    ) {
-    }
+        private readonly int $defaultSleepSeconds = 1,
+    ) {}
 
     /**
      * Executa o loop de consumo da fila.

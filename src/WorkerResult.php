@@ -16,9 +16,8 @@ final class WorkerResult
     private function __construct(
         private readonly string $status,
         private readonly ?TaskPayload $payload = null,
-        private readonly ?Throwable $error = null
-    ) {
-    }
+        private readonly ?Throwable $error = null,
+    ) {}
 
     /**
      * Cria resultado para fila vazia.
