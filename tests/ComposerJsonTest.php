@@ -30,15 +30,15 @@ final class ComposerJsonTest extends TestCase
     }
 
     /** @see docs/USO.md#composerjson */
-    public function testRequiresFramework2(): void
+    public function testRequiresFramework3(): void
     {
-        self::assertSame('^2.0', $this->composer['require']['elavora/api-framework'] ?? null);
+        self::assertSame('^3.0', $this->composer['require']['elavora/api-framework'] ?? null);
     }
 
     /** @see docs/USO.md#composerjson */
-    public function testBranchAliasIs10Dev(): void
+    public function testBranchAliasIs20Dev(): void
     {
-        self::assertSame('1.0-dev', $this->composer['extra']['branch-alias']['dev-main'] ?? null);
+        self::assertSame('2.0-dev', $this->composer['extra']['branch-alias']['dev-main'] ?? null);
     }
 
     /** @see docs/USO.md#composerjson */
