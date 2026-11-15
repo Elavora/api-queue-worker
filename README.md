@@ -9,7 +9,7 @@
 Worker opcional para consumir tarefas publicadas em qualquer implementação do
 contrato `Elavora\Api\Framework\Contracts\Queue`.
 
-Versão `1.0`: exige `elavora/api-framework` `^2.0` e PHP `>=8.3`.
+Versão `1.0`: exige `elavora/api-framework` `^3.0` e PHP `>=8.3`.
 É a primeira versão que funciona de fato: a `0.2.0` pedia o framework `^0.3.1`,
 que não tem o contrato `Queue` neste namespace.
 
@@ -37,7 +37,7 @@ Especificação completa, exemplos e validação local: [docs/USO.md](docs/USO.m
 composer require elavora/api-queue-worker
 ```
 
-Requisitos: PHP 8.3 ou superior e `elavora/api-framework` `^2.0`.
+Requisitos: PHP 8.3 ou superior e `elavora/api-framework` `^3.0`.
 
 ## Desenvolvimento e testes
 
