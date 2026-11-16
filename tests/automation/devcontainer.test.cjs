@@ -7,8 +7,8 @@ const h = require('./_helpers.cjs');
 const FILE = '.devcontainer/devcontainer.json';
 
 const EXPECTED = {
-    name: 'Elavora PHP 8.3',
-    image: 'ghcr.io/elavora/php-dev:8.3-latest',
+    name: 'Elavora PHP 8.4',
+    image: 'ghcr.io/elavora/php-dev:8.4-latest',
     remoteUser: 'vscode',
     postCreateCommand:
         'git config --global --add safe.directory "$(pwd)" && composer install --no-interaction --prefer-dist',
@@ -45,16 +45,16 @@ test.describe('.devcontainer/devcontainer.json', () => {
         assert.deepEqual(load(), EXPECTED);
     });
 
-    test('image é a tag 8.3-latest, nunca versão fixa, outra tag móvel nem nome local', () => {
+    test('image é a tag 8.4-latest, nunca versão fixa, outra tag móvel nem nome local', () => {
         const { image } = load();
         assert.equal(image, h.IMAGE);
-        assert.equal(image, 'ghcr.io/elavora/php-dev:8.3-latest');
+        assert.equal(image, 'ghcr.io/elavora/php-dev:8.4-latest');
         for (const bad of [
-            'ghcr.io/elavora/php-dev:8.3-0.3.0',
-            'ghcr.io/elavora/php-dev:8.3-0.2.0',
-            'ghcr.io/elavora/php-dev:8.3',
+            'ghcr.io/elavora/php-dev:8.4-0.3.0',
+            'ghcr.io/elavora/php-dev:8.4-0.2.0',
+            'ghcr.io/elavora/php-dev:8.4',
             'ghcr.io/elavora/php-dev:latest',
-            'elavora/php-dev:8.3',
+            'elavora/php-dev:8.4',
         ]) {
             assert.notEqual(image, bad);
         }
