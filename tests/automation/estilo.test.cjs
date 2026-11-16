@@ -44,25 +44,24 @@ function composer() {
 }
 
 /**
- * Restrição aceita para elavora/code-standards: major 1 e minor 1 ou maior (a 1.0.0 não tem o
- * subcomando lint), com patch opcional. O valor exato não é conferido.
+ * Restrição aceita para elavora/code-standards: major 2 (qualquer minor), com patch opcional. O valor exato não é conferido.
  */
-const CODE_STANDARDS = /^\^1\.[1-9]\d*(?:\.\d+)?$/;
+const CODE_STANDARDS = /^\^2\.\d+(?:\.\d+)?$/;
 
 test.describe('restrição de elavora/code-standards (exemplos da doc)', () => {
     for (const [c, ok] of [
-        ['^1.1', true],
-        ['^1.2', true],
-        ['^1.1.3', true],
-        ['^1.10', true],
-        ['^1.0', false],
-        ['^1.0.5', false],
-        ['^2.0', false],
-        ['^1.1 || ^2.0', false],
-        ['~1.1', false],
-        ['^1', false],
-        ['1.1.0', false],
-        ['^1.1.2.3', false],
+        ['^2.0', true],
+        ['^2.1', true],
+        ['^2.0.3', true],
+        ['^2.10', true],
+        ['^1.1', false],
+        ['^1.2', false],
+        ['^3.0', false],
+        ['^2.0 || ^3.0', false],
+        ['~2.0', false],
+        ['^2', false],
+        ['2.0.0', false],
+        ['^2.0.2.3', false],
     ]) {
         test(`${c} ${ok ? 'passa' : 'falha'}`, () => {
             assert.equal(CODE_STANDARDS.test(c), ok);
@@ -91,7 +90,7 @@ test.describe('composer.json', () => {
         assert.ok('elavora/api-framework' in (c.require || {}), 'dependência de runtime perdida');
     });
 
-    test('elavora/code-standards ^1.N (N >= 1) em require-dev, fora do require', () => {
+    test('elavora/code-standards ^2.N em require-dev, fora do require', () => {
         const c = composer();
         const constraint = (c['require-dev'] || {})['elavora/code-standards'];
         assert.equal(typeof constraint, 'string', 'elavora/code-standards ausente em require-dev');
