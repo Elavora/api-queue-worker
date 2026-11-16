@@ -13,7 +13,7 @@
     }
   },
   "require-dev": {
-    "elavora/code-standards": "^1.1",
+    "elavora/code-standards": "^2.0",
     "phpstan/phpstan": "^2.2",
     "phpunit/phpunit": "^10.5 || ^11.0 || ^12.0"
   },
