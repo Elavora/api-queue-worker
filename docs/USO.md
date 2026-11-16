@@ -11,7 +11,7 @@ Este guia é a especificação do pacote. Tudo o que um teste precisa saber est�
 |---|---|
 | Versão deste pacote | `1.0.0` (primeira versão compatível com o framework 2) |
 | `elavora/api-framework` | `^2.0` |
-| PHP | `>=8.3` |
+| PHP | `>=8.4` |
 
 A `1.0.0` já foi publicada (tag legada `v1.0.0`, marcada como pré-release no GitHub). As versões
 seguintes saem do fluxo central de release: veja [Versões e release](AUTOMACAO.md#versões-e-release).
@@ -27,7 +27,7 @@ primeira versão instalável de fato.
 
 O `composer.json` do pacote deve ter:
 
-- `require.php` = `">=8.3"`
+- `require.php` = `">=8.4"`
 - `require.elavora/api-framework` = `"^2.0"`
 - `extra.branch-alias.dev-main` = `"1.0-dev"`
 - `autoload.psr-4` = `"Elavora\\Api\\Extension\\QueueWorker\\": "src/"` (sem mudança)
@@ -45,7 +45,7 @@ Para este pacote, nada muda no código. Ele só usa um tipo do framework:
 - `Elavora\Api\Framework\Contracts\Queue`, com `push(string $queue, array $payload): void`
   e `pop(string $queue): ?array`. `pop()` devolve `null` quando a fila está vazia.
 
-A mudança real é de versão: o framework 2 exige PHP 8.3. Por isso este pacote também passa a exigir PHP 8.3.
+A mudança real é de versão: o framework 2 exige PHP 8.4. Por isso este pacote também passa a exigir PHP 8.4.
 
 Este pacote não registra extensão no framework e não lê variáveis de ambiente, com uma exceção:
 `QUEUE_NAME`, lida pelo `QueueWorkerCommand` (veja abaixo). A fila (`Queue`) vem de outra extensão,

@@ -4,8 +4,8 @@
   "type": "library",
   "license": "MIT",
   "require": {
-    "php": ">=8.3",
-    "elavora/api-framework": "^3.0"
+    "php": ">=8.4",
+    "elavora/api-framework": "^4.1"
   },
   "autoload": {
     "psr-4": {
@@ -34,7 +34,7 @@
   },
   "extra": {
     "branch-alias": {
-      "dev-main": "2.0-dev"
+      "dev-main": "3.0-dev"
     }
   }
 }

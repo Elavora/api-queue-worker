@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const IMAGE = 'ghcr.io/elavora/php-dev:8.3-latest';
+const IMAGE = 'ghcr.io/elavora/php-dev:8.4-latest';
 
 /**
  * Nome do repositório (`<repo>` da doc), tirado do `name` do composer.json (`elavora/<repo>`).
