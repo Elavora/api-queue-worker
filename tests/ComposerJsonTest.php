@@ -32,7 +32,7 @@ final class ComposerJsonTest extends TestCase
     /** @see docs/USO.md#composerjson */
     public function testRequiresFramework3(): void
     {
-        self::assertSame('^4.1', $this->composer['require']['elavora/api-framework'] ?? null);
+        self::assertSame('^4.1 || ^5.0 || ^6.0', $this->composer['require']['elavora/api-framework'] ?? null);
     }
 
     /** @see docs/USO.md#composerjson */
