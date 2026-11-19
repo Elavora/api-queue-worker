@@ -37,7 +37,7 @@ Especificação completa, exemplos e validação local: [docs/USO.md](docs/USO.m
 composer require elavora/api-queue-worker
 ```
 
-Requisitos: PHP 8.4 ou superior e `elavora/api-framework` `^4.1`.
+Requisitos: PHP 8.4 ou superior e `elavora/api-framework` `^4.1 || ^5.0 || ^6.0`.
 
 ## Desenvolvimento e testes
 
