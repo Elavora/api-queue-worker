@@ -256,13 +256,44 @@ Processa uma mensagem por chamada.
 ```php
 public function __construct(Queue $queue, TaskRegistry $tasks);
 public function workOnce(string $queue): WorkerResult;
+public function workOnceFrom(array $queues): WorkerResult;
+public function extendCurrent(?int $seconds = null): void;
 ```
 
 O construtor aceita argumentos nomeados (`queue:`, `tasks:`).
 
+`workOnce($queue)` é o mesmo que `workOnceFrom([$queue])`.
+
+#### Confirmação (ack) e filas com prioridade
+
+Se a `Queue` também implementa `Elavora\Api\Framework\Contracts\AcknowledgesJobs` (framework `6.4` ou superior; por
+exemplo a `ReliableRedisQueue` do `elavora/api-queue-redis`), o worker **reserva** a mensagem em vez de retirá-la, e só
+confirma (`acknowledge()`) depois de tratar o resultado. Se o processo cair no meio do job, não há `ack`: a mensagem
+volta à fila quando o prazo de visibilidade da fila passa, e o job não se perde. A garantia é pelo menos uma vez, então
+os handlers devem ser idempotentes. Com uma `Queue` que só implementa `Queue`, o comportamento é o de sempre
+(`pop()`, sem ack): nada muda para quem não atualizar a fila.
+
+#### workOnceFrom
+
+`workOnceFrom(array $queues)` recebe filas em **ordem de prioridade** (a primeira é a mais prioritária) e processa uma
+mensagem da primeira fila que tiver trabalho; só olha a seguinte quando a anterior está vazia.
+
+- Fila com `AcknowledgesJobs`: chama `reserve($queues)` uma vez.
+- Fila sem `AcknowledgesJobs`: chama `pop()` em cada fila, na ordem, até uma devolver mensagem.
+- Nenhuma mensagem → `WorkerResult::idle()`.
+- Lista vazia → `InvalidArgumentException` com `A lista de filas nao pode ser vazia.`
+- O reenfileiramento de uma falha (`push`) vai para a fila **de onde a mensagem saiu**, não para a primeira da lista.
+
+#### extendCurrent
+
+`extendCurrent(?int $seconds = null)` renova o prazo de visibilidade da mensagem que o worker está processando agora
+(`AcknowledgesJobs::extend()`), para jobs longos: o handler chama o método, por exemplo a cada etapa, mantendo uma
+referência ao worker. `$seconds` é o novo prazo a partir de agora; `null` usa o padrão da fila.
+Sem mensagem em processamento, ou com uma fila sem `AcknowledgesJobs`, não faz nada.
+
 #### workOnce
 
-1. Chama `pop($queue)` na fila uma vez.
+1. Chama `pop($queue)` na fila uma vez (com `AcknowledgesJobs`: `reserve([$queue])`).
 2. `pop()` devolveu `null` → devolve `WorkerResult::idle()`. Nada mais acontece.
 3. Converte com `TaskPayload::fromArray()`. Se o payload for inválido, a `InvalidArgumentException`
    sobe para quem chamou e a mensagem já foi retirada da fila (não volta).
@@ -274,6 +305,10 @@ O construtor aceita argumentos nomeados (`queue:`, `tasks:`).
        fim dela) e devolve `WorkerResult::retried($falhou, $erro)`.
      - `canRetry()` falso → não faz `push` e devolve `WorkerResult::failed($falhou, $erro)`.
        A mensagem é descartada; não existe fila de falhas.
+5. Com `AcknowledgesJobs`, em **todos** os casos acima (processada, reenfileirada ou falha definitiva) o worker chama
+   `acknowledge()` da mensagem **depois** do `push` do reenfileiramento. Se o payload for inválido
+   (`InvalidArgumentException` no passo 3), a mensagem também é confirmada (descartada) antes de a exceção subir, para
+   não voltar à fila em loop.
 
 Na prática, o handler roda no máximo `maxAttempts` vezes. Com `maxAttempts = 3` e um handler que
 sempre falha: 1ª execução → `retried` (attempts 1), 2ª → `retried` (attempts 2), 3ª → `failed` (attempts 3).
@@ -330,17 +365,20 @@ Valor negativo em `defaultSleepSeconds` fica fora desta especificação.
 
 | Opção | Padrão | Regra |
 |---|---|---|
-| `--queue=<nome>` | variável de ambiente `QUEUE_NAME`; se vazia ou ausente, `default` | o texto depois do `=`, sem validação (`--queue=` dá fila `''`) |
+| `--queue=<nome>` | variável de ambiente `QUEUE_NAME`; se vazia ou ausente, `default` | o texto depois do `=`, sem validação (`--queue=` dá fila `''`). Vírgulas separam **várias filas em ordem de prioridade**: `--queue=conteudo,descricao,tags` (veja abaixo) |
 | `--sleep=<segundos>` | `defaultSleepSeconds` do construtor | convertido com `(int)`; negativo vira `0`; `abc` vira `0`; `2s` vira `2` |
 | `--max-jobs=<n>` | `0` (sem limite) | convertido com `(int)`; negativo vira `0` |
 
 - Argumentos desconhecidos são ignorados.
+- Várias filas: o valor de `--queue` (ou `QUEUE_NAME`) é separado por `,`, cada nome sem espaços nas pontas, e os
+  nomes vazios são ignorados (`a,,b` vira `a`, `b`). Se não sobrar nenhum nome, vale o texto original, como antes.
+  A primeira fila é a mais prioritária; o worker pega da primeira que tiver trabalho (`workOnceFrom`).
 - Repetir uma opção: vale a última.
 - A forma com espaço (`--queue emails`) não é reconhecida; só a forma com `=`.
 
 #### Loop
 
-A cada volta, chama `workOnce(<fila>)` e:
+A cada volta, chama `workOnceFrom(<filas>)` (com uma fila só, é o `workOnce(<fila>)`) e:
 
 1. `failed` → escreve `Tarefa falhou definitivamente na fila <fila>.` e quebra de linha no STDERR e
    devolve `1`. O loop para na primeira falha definitiva.
@@ -361,6 +399,9 @@ ele continua dormindo e tentando de novo. Nos testes, publique tarefas suficient
 | 1 tarefa que sempre falha, `maxAttempts: 1` | devolve `1`; STDERR com `Tarefa falhou definitivamente na fila default.` |
 | `QUEUE_NAME=emails`, sem `--queue`, 1 tarefa em `emails`, `--max-jobs=1` | consome da fila `emails` |
 | `QUEUE_NAME=emails` e `--queue=sms` | consome da fila `sms` |
+| `--queue=alta,baixa`, 1 tarefa em `baixa` e 1 em `alta`, `--max-jobs=2` | processa primeiro a de `alta`, depois a de `baixa` |
+| `--queue=alta,baixa`, 1 tarefa em `baixa`, `--max-jobs=1` | processa a de `baixa` (`alta` está vazia) |
+| `--queue=alta, ,baixa` | filas `alta` e `baixa` |
 
 ## Validação local
 
