@@ -266,6 +266,8 @@ O construtor aceita argumentos nomeados (`queue:`, `tasks:`).
 
 #### Confirmação (ack) e filas com prioridade
 
+Disponível desde a versão `3.1.0`.
+
 Se a `Queue` também implementa `Elavora\Api\Framework\Contracts\AcknowledgesJobs` (framework `6.4` ou superior; por
 exemplo a `ReliableRedisQueue` do `elavora/api-queue-redis`), o worker **reserva** a mensagem em vez de retirá-la, e só
 confirma (`acknowledge()`) depois de tratar o resultado. Se o processo cair no meio do job, não há `ack`: a mensagem
