@@ -26,6 +26,12 @@ O worker reenfileira a tarefa que falhou enquanto `maxAttempts` não for atingid
 Para rodar em loop num script, use `QueueWorkerCommand` com as opções `--queue=`,
 `--sleep=` e `--max-jobs=`.
 
+Com uma fila que implementa `AcknowledgesJobs` (framework `6.4` ou superior, como a `ReliableRedisQueue` do
+`elavora/api-queue-redis`), o worker reserva a mensagem e só a confirma (`ack`) depois de tratar o resultado: se o
+processo cair no meio do job, a mensagem volta à fila quando o prazo de visibilidade passa. `extendCurrent()` renova o
+prazo de jobs longos, e `workOnceFrom(['conteudo', 'descricao', 'tags'])` (ou `--queue=conteudo,descricao,tags`) pega
+da fila mais prioritária que tiver trabalho. Filas sem `AcknowledgesJobs` continuam como antes.
+
 O pacote não traz fila própria: instale uma extensão que registre `Queue` no
 container, como o `elavora/api-queue-redis`.
 

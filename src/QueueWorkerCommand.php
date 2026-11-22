@@ -24,13 +24,14 @@ final class QueueWorkerCommand
     public function run(array $argv): int
     {
         $options = $this->options($argv);
-        $queue = $options['queue'];
+        $queues = $options['queues'];
+        $queue = implode(',', $queues);
         $sleepSeconds = $options['sleep'];
         $maxJobs = $options['max_jobs'];
         $processedJobs = 0;
 
         while (true) {
-            $result = $this->worker->workOnce($queue);
+            $result = $this->worker->workOnceFrom($queues);
 
             if ($result->isFailed()) {
                 fwrite(STDERR, sprintf("Tarefa falhou definitivamente na fila %s.\n", $queue));
@@ -55,19 +56,19 @@ final class QueueWorkerCommand
     /**
      * @param array<int, string> $argv
      *
-     * @return array{queue: string, sleep: int, max_jobs: int}
+     * @return array{queues: list<string>, sleep: int, max_jobs: int}
      */
     private function options(array $argv): array
     {
         $options = [
-            'queue' => getenv('QUEUE_NAME') ?: 'default',
+            'queues' => [getenv('QUEUE_NAME') ?: 'default'],
             'sleep' => $this->defaultSleepSeconds,
             'max_jobs' => 0,
         ];
 
         foreach (array_slice($argv, 1) as $argument) {
             if (str_starts_with($argument, '--queue=')) {
-                $options['queue'] = substr($argument, 8);
+                $options['queues'] = [substr($argument, 8)];
                 continue;
             }
 
@@ -81,6 +82,23 @@ final class QueueWorkerCommand
             }
         }
 
+        $options['queues'] = self::splitQueues($options['queues'][0]);
+
         return $options;
+    }
+
+    /**
+     * Separa por virgula (ordem de prioridade), ignora nomes vazios; sem nenhum nome, mantem o texto original.
+     *
+     * @return list<string>
+     */
+    private static function splitQueues(string $value): array
+    {
+        $names = array_values(array_filter(
+            array_map('trim', explode(',', $value)),
+            static fn(string $name): bool => $name !== '',
+        ));
+
+        return $names === [] ? [$value] : $names;
     }
 }
