@@ -255,12 +255,13 @@ final class AcknowledgingWorkerTest extends TestCase
 
     public function testCommandKeepsEmptyQueueOptionAsBefore(): void
     {
-        $command = new QueueWorkerCommand(new QueueWorker($this->queue, new TaskRegistry()));
-        $this->queue->seed('', (new TaskPayload('t'))->toArray());
+        $plain = new FakeQueue();
+        $plain->seed('', (new TaskPayload('t'))->toArray());
+        $command = new QueueWorkerCommand(new QueueWorker($plain, (new TaskRegistry())->add('t', static function (): void {})));
 
         $exit = $command->run(['worker.php', '--queue=', '--sleep=0', '--max-jobs=1']);
 
         self::assertSame(0, $exit);
-        self::assertSame([['']], $this->queue->reserveCalls);
+        self::assertSame([''], $plain->pops);
     }
 }

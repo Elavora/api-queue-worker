@@ -306,7 +306,8 @@ Sem mensagem em processamento, ou com uma fila sem `AcknowledgesJobs`, não faz 
      - `canRetry()` falso → não faz `push` e devolve `WorkerResult::failed($falhou, $erro)`.
        A mensagem é descartada; não existe fila de falhas.
 5. Com `AcknowledgesJobs`, em **todos** os casos acima (processada, reenfileirada ou falha definitiva) o worker chama
-   `acknowledge()` da mensagem **depois** do `push` do reenfileiramento. Se o payload for inválido
+   `acknowledge()` da mensagem **depois** do `push` do reenfileiramento (se o `push` lançar exceção, ela sobe e a
+   mensagem não é confirmada: volta à fila pelo prazo de visibilidade). Se o payload for inválido
    (`InvalidArgumentException` no passo 3), a mensagem também é confirmada (descartada) antes de a exceção subir, para
    não voltar à fila em loop.
 
